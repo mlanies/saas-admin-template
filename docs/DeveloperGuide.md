@@ -8,11 +8,24 @@ This guide provides technical details for developers working with the User Group
 
 ### System Components
 
-1. **Database Layer** - D1 database with three main tables
-2. **Service Layer** - Business logic services
-3. **API Layer** - RESTful endpoints
+1. **Database Layer** - Dual D1 database architecture with business and auth separation
+2. **Service Layer** - Business logic services with cross-database integration
+3. **API Layer** - RESTful endpoints with unified authentication
 4. **Frontend Layer** - React components and Astro pages
 5. **Auth Layer** - Permission checking and user authentication
+
+### Multi-Database Architecture
+
+The system uses two separate D1 databases for optimal data organization:
+
+- **DB (Business Database)**: Contains customers, subscriptions, and business logic
+- **AUTH_DB (Authentication Database)**: Contains users, groups, permissions, and authentication data
+
+This separation allows for:
+- Better data organization and security
+- Independent scaling of business and auth data
+- Clear separation of concerns
+- Cross-database data integration when needed
 
 ### Technology Stack
 
@@ -23,9 +36,23 @@ This guide provides technical details for developers working with the User Group
 
 ## Database Schema
 
+### Database Distribution
+
+#### AUTH_DB Tables (Authentication & Groups)
+- `groups` - Group definitions
+- `user_groups` - System user to group relationships
+- `group_permissions` - Group permissions
+- `user` - System users
+- `customer_groups` - Customer to group relationships
+
+#### DB Tables (Business Logic)
+- `customers` - Customer data
+- `subscriptions` - Subscription data
+- `customer_subscriptions` - Customer subscription relationships
+
 ### Tables
 
-#### groups
+#### groups (AUTH_DB)
 ```sql
 CREATE TABLE groups (
     id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
@@ -50,7 +77,7 @@ CREATE TABLE user_groups (
 );
 ```
 
-#### group_permissions
+#### group_permissions (AUTH_DB)
 ```sql
 CREATE TABLE group_permissions (
     id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
@@ -60,6 +87,31 @@ CREATE TABLE group_permissions (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
     UNIQUE(group_id, resource, action)
+);
+```
+
+#### customer_groups (AUTH_DB)
+```sql
+CREATE TABLE customer_groups (
+    id TEXT PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
+    customer_id INTEGER NOT NULL,
+    group_id TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'member',
+    joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    UNIQUE(customer_id, group_id)
+);
+```
+
+#### customers (DB)
+```sql
+CREATE TABLE customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -166,6 +218,28 @@ class GroupPermissionService {
 }
 ```
 
+### CustomerGroupService
+
+Handles customer-to-group relationships with cross-database integration.
+
+```typescript
+class CustomerGroupService {
+  constructor(authDb: D1Database, customerDb?: D1Database)
+  
+  async getCustomersInGroup(groupId: string): Promise<CustomerInGroup[]>
+  async addCustomerToGroup(groupId: string, data: AddCustomerToGroupData): Promise<CustomerGroup>
+  async removeCustomerFromGroup(groupId: string, customerId: number): Promise<boolean>
+  async updateCustomerRole(groupId: string, customerId: number, role: 'admin' | 'member'): Promise<CustomerGroup | null>
+  async isCustomerInGroup(customerId: number, groupId: string): Promise<boolean>
+}
+```
+
+**Key Features:**
+- Cross-database data integration (AUTH_DB for groups, DB for customers)
+- Handles customer data from business database
+- Manages group relationships in authentication database
+- Seamless integration with existing user group system
+
 ## API Design
 
 ### RESTful Endpoints
@@ -221,9 +295,10 @@ await requirePermission(DB, userId, 'groups', 'read');
 - Error handling
 
 #### GroupUsers
-- Manages users within a group
-- Add/remove users
+- Manages both system users and customers within a group
+- Add/remove users and customers
 - Change user roles
+- Displays user type (System User or Customer)
 
 #### GroupPermissions
 - Permission matrix interface

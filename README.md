@@ -15,8 +15,9 @@ A complete admin dashboard template built with Astro, Shadcn UI, and Cloudflare'
 - 👥 **Advanced user groups and role-based access control**
 - 🔑 **Comprehensive permission system** with resource-based access control
 - 🎯 **Complete group management** - create, edit, delete groups
-- 👤 **User management within groups** - add/remove users, assign roles
+- 👤 **User management within groups** - add/remove users, assign roles (both system users and customers)
 - 🔒 **Granular permissions** - resource-level access control (customers, subscriptions, admin, groups)
+- 🏢 **Multi-database architecture** - separate databases for business logic and authentication
 - 💳 Customer management
 - 📊 Subscription tracking
 - 🚀 Deploy to Cloudflare Workers
@@ -42,9 +43,10 @@ The SaaS Admin Template includes a comprehensive user groups and permissions sys
 
 ### 🎯 Group Management
 - **Create, edit, and delete groups** with intuitive UI
-- **User assignment** - add/remove users from groups
+- **User assignment** - add/remove both system users and customers from groups
 - **Role-based access** - assign admin or member roles within groups
 - **Group permissions** - configure resource-level access control
+- **Multi-database support** - seamless integration between business and auth databases
 
 ### 🔒 Permission System
 - **Resources**: customers, subscriptions, admin, groups
@@ -95,14 +97,18 @@ _An API token is required to authenticate requests to the API. You should genera
 3. Create D1 databases for the application:
 
 ```bash
-# Main database for customers and subscriptions
+# Main database for customers and subscriptions (business logic)
 npx wrangler d1 create admin-db
 
-# Authentication database for users
+# Authentication database for users, groups, and permissions
 npx wrangler d1 create openauth-template-auth-db
 ```
 
 ...and update the `database_id` fields in `wrangler.jsonc` with the new database IDs.
+
+**Note**: The system uses two separate databases:
+- **DB**: Contains customers, subscriptions, and business logic
+- **AUTH_DB**: Contains users, groups, permissions, and authentication data
 
 4. Create KV namespace for session storage:
 
@@ -198,10 +204,11 @@ The system includes a comprehensive user groups and role-based access control sy
 
 ### 🏢 **Groups Management**
 - ✅ Create and manage user groups
-- ✅ Add/remove users from groups
+- ✅ Add/remove both system users and customers from groups
 - ✅ Assign roles within groups (Admin, Member)
 - ✅ Search and filter groups
 - ✅ Group descriptions and metadata
+- ✅ Multi-database architecture for seamless data integration
 
 ### 🔑 **Permission System**
 - ✅ Resource-based permissions (customers, subscriptions, admin, groups)
@@ -304,7 +311,8 @@ Authorization: Bearer your_api_token
 Content-Type: application/json
 {
   "user_id": "user_id",
-  "role": "member"
+  "role": "member",
+  "user_type": "user"  // or "customer"
 }
 
 # Get group permissions

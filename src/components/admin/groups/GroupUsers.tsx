@@ -12,12 +12,14 @@ interface UserInGroup {
   email: string;
   role: 'admin' | 'member';
   joined_at: string;
+  type: 'user' | 'customer';
 }
 
 interface User {
   id: string;
   email: string;
   created_at: string;
+  type: 'user' | 'customer';
 }
 
 interface GroupUsersProps {
@@ -99,6 +101,13 @@ export function GroupUsers({ groupId, groupName, apiToken }: GroupUsersProps) {
       if (apiToken) {
         headers['Authorization'] = `Bearer ${apiToken}`;
       }
+
+      // Find the selected user to determine their type
+      const selectedUser = allUsers.find(user => user.id === selectedUserId);
+      if (!selectedUser) {
+        setError('Selected user not found');
+        return;
+      }
       
       const response = await fetch(`/api/groups/${groupId}/users`, {
         method: 'POST',
@@ -106,6 +115,7 @@ export function GroupUsers({ groupId, groupName, apiToken }: GroupUsersProps) {
         body: JSON.stringify({
           user_id: selectedUserId,
           role: selectedRole,
+          user_type: selectedUser.type,
         }),
       });
 
@@ -204,13 +214,6 @@ export function GroupUsers({ groupId, groupName, apiToken }: GroupUsersProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Group Users</h1>
-        <p className="text-muted-foreground">
-          Manage users in group: {groupName}
-        </p>
-      </div>
-
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           {error}
@@ -232,7 +235,12 @@ export function GroupUsers({ groupId, groupName, apiToken }: GroupUsersProps) {
                 <SelectContent>
                   {availableUsers.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
-                      {user.email}
+                      <div className="flex items-center justify-between">
+                        <span>{user.email}</span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {user.type === 'user' ? 'System User' : 'Customer'}
+                        </span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -291,7 +299,14 @@ export function GroupUsers({ groupId, groupName, apiToken }: GroupUsersProps) {
               <TableBody>
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.email}</TableCell>
+                    <TableCell className="font-medium">
+                      <div>
+                        <div>{user.email}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {user.type === 'user' ? 'System User' : 'Customer'}
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>

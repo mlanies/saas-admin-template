@@ -15,12 +15,15 @@ import { GroupService } from '@/lib/services/group';
 const auth = checkAuth(Astro.request);
 const isAuthenticated = auth.isAuthenticated;
 
-const { DB } = Astro.locals.runtime.env;
+const { DB, AUTH_DB } = Astro.locals.runtime.env as unknown as { 
+  DB: D1Database; 
+  AUTH_DB: D1Database;
+};
 
 const customerService = new CustomerService(DB);
 const subscriptionService = new SubscriptionService(DB);
 const customerSubscriptionService = new CustomerSubscriptionService(DB);
-const groupService = new GroupService(DB);
+const groupService = new GroupService(AUTH_DB);
 
 const customers = await customerService.getAll();
 const subscriptions = await subscriptionService.getAll();

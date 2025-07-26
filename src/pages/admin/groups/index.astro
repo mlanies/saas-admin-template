@@ -1,6 +1,14 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import { GroupService } from '@/lib/services/group';
+import { checkAuth } from '@/lib/auth';
+
+const auth = checkAuth(Astro.request);
+const isAuthenticated = auth.isAuthenticated;
+
+if (!isAuthenticated) {
+  return Astro.redirect('/login');
+}
 
 const { API_TOKEN, AUTH_DB } = Astro.locals.runtime.env as unknown as { API_TOKEN: string; AUTH_DB: D1Database };
 
@@ -25,18 +33,25 @@ import { CreateGroupButton } from '@/components/admin/groups/CreateGroupButton';
 ---
 
 <Layout title="Groups">
-  {groupsWithUserCount.length ? (
-    <GroupsTable data={groupsWithUserCount} apiToken={API_TOKEN} />
-  ) : (
-    <div class="text-center py-12">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4">No Groups Yet</h2>
-      <p class="text-gray-600 mb-6">
-        Create your first group to start managing users and permissions.
-      </p>
+  <div class="space-y-6">
+    <div class="flex items-center justify-end">
+      <CreateGroupButton apiToken={API_TOKEN} client:only="react" />
     </div>
-  )}
-
-  <div slot="actions">
-    <CreateGroupButton apiToken={API_TOKEN} client:only="react" />
+    
+    {groupsWithUserCount.length ? (
+      <div class="bg-card p-6 rounded-lg border">
+        <GroupsTable data={groupsWithUserCount} apiToken={API_TOKEN} client:only="react" />
+      </div>
+    ) : (
+      <div class="bg-card p-6 rounded-lg border">
+        <div class="text-center py-12">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">No Groups Yet</h2>
+          <p class="text-gray-600 mb-6">
+            Create your first group to start managing users and permissions.
+          </p>
+          <CreateGroupButton apiToken={API_TOKEN} client:only="react" />
+        </div>
+      </div>
+    )}
   </div>
 </Layout> 

@@ -142,15 +142,6 @@ export function GroupsTable({ data, apiToken }: GroupsTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">User Groups</h1>
-          <p className="text-muted-foreground">
-            Manage user groups and permissions
-          </p>
-        </div>
-      </div>
-      
       <div className="rounded-md border">
         <DataTable table={table} />
       </div>

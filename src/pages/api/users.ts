@@ -3,7 +3,11 @@ import { validateApiTokenResponse } from '@/lib/api';
 
 export const GET: APIRoute = async ({ request, locals }) => {
   try {
-    const { API_TOKEN, AUTH_DB } = locals.runtime.env as unknown as { API_TOKEN: string; AUTH_DB: D1Database };
+    const { API_TOKEN, AUTH_DB, DB } = locals.runtime.env as unknown as { 
+      API_TOKEN: string; 
+      AUTH_DB: D1Database;
+      DB: D1Database;
+    };
 
     const invalidTokenResponse = await validateApiTokenResponse(
       request,
@@ -11,11 +15,31 @@ export const GET: APIRoute = async ({ request, locals }) => {
     );
     if (invalidTokenResponse) return invalidTokenResponse;
 
-    const result = await AUTH_DB
+    // Get users from auth table
+    const authUsers = await AUTH_DB
       .prepare('SELECT id, email, created_at FROM user ORDER BY created_at DESC')
       .all<{ id: string; email: string; created_at: string }>();
 
-    return new Response(JSON.stringify(result.results || []), {
+    // Get customers from customers table
+    const customers = await DB
+      .prepare('SELECT id, email, created_at FROM customers ORDER BY created_at DESC')
+      .all<{ id: string; email: string; created_at: string }>();
+
+    // Combine and format users
+    const allUsers = [
+      ...(authUsers.results || []).map(user => ({
+        ...user,
+        type: 'user'
+      })),
+      ...(customers.results || []).map(customer => ({
+        id: customer.id.toString(),
+        email: customer.email,
+        created_at: customer.created_at,
+        type: 'customer'
+      }))
+    ];
+
+    return new Response(JSON.stringify(allUsers), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });

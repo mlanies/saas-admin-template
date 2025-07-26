@@ -56,28 +56,39 @@ export const POST: APIRoute = async ({ params, request, locals }) => {
       });
     }
 
-    const body = await request.json() as { resource: string; action: string };
-    const { resource, action } = body;
-
-    if (!resource || !action) {
-      return new Response(JSON.stringify({ error: 'Resource and action are required' }), {
+    const body = await request.json() as { resource: string; action: string }[];
+    
+    if (!Array.isArray(body)) {
+      return new Response(JSON.stringify({ error: 'Expected array of permissions' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    const permissionService = new GroupPermissionService(AUTH_DB);
-    const permission = await permissionService.addPermission(groupId, {
-      resource,
-      action
-    });
+    // Validate each permission
+    for (const permission of body) {
+      if (!permission.resource || !permission.action) {
+        return new Response(JSON.stringify({ error: 'Each permission must have resource and action' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
 
-    return new Response(JSON.stringify(permission), {
+    const permissionService = new GroupPermissionService(AUTH_DB);
+    
+    // Set all permissions for the group
+    await permissionService.setGroupPermissions(groupId, body);
+    
+    // Get the updated permissions
+    const permissions = await permissionService.getGroupPermissions(groupId);
+
+    return new Response(JSON.stringify(permissions), {
       status: 201,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Error adding group permission:', error);
+    console.error('Error updating group permissions:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
