@@ -1,0 +1,38 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { GroupList } from '@/components/admin/groups/GroupList';
+import { checkAuth, redirectToLogin } from '@/lib/auth';
+
+// Проверяем аутентификацию
+const auth = checkAuth(Astro.request);
+if (!auth.isAuthenticated) {
+  return redirectToLogin(Astro.url);
+}
+
+// Get API token for frontend
+const { API_TOKEN } = Astro.locals.runtime.env as unknown as { API_TOKEN: string };
+---
+
+<Layout title="Groups">
+  <GroupList client:only="react" apiToken={API_TOKEN} />
+</Layout>
+
+<script>
+  // Обработка навигации
+  document.addEventListener('DOMContentLoaded', () => {
+    const groupList = document.querySelector('[data-group-list]');
+    if (groupList) {
+      groupList.addEventListener('edit-group', (e: any) => {
+        window.location.href = `/admin/groups/${e.detail.group.id}/edit`;
+      });
+      
+      groupList.addEventListener('view-group', (e: any) => {
+        window.location.href = `/admin/groups/${e.detail.group.id}`;
+      });
+      
+      groupList.addEventListener('create-group', () => {
+        window.location.href = '/admin/groups/create';
+      });
+    }
+  });
+</script> 

@@ -1,0 +1,114 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { GroupService } from '@/lib/services/group';
+
+// Get group data
+const groupId = Astro.params.id;
+if (!groupId) {
+  return new Response('Group ID is required', { status: 400 });
+}
+
+const { DB } = Astro.locals.runtime.env as unknown as { DB: D1Database };
+const groupService = new GroupService(DB);
+const group = await groupService.getById(groupId);
+
+if (!group) {
+  return new Response('Group not found', { status: 404 });
+}
+
+const usersCount = await groupService.getUsersCount(groupId);
+---
+
+<Layout title={`Group: ${group.name}`}>
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">{group.name}</h1>
+        <p class="text-muted-foreground">
+          {group.description || 'No description provided'}
+        </p>
+      </div>
+      <div class="flex items-center gap-4">
+        <a
+          href={`/admin/groups/${group.id}/edit`}
+          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+        >
+          Edit Group
+        </a>
+        <a
+          href={`/admin/groups/${group.id}/users`}
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Manage Users
+        </a>
+        <a
+          href={`/admin/groups/${group.id}/permissions`}
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Permissions
+        </a>
+      </div>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <div class="bg-white p-6 rounded-lg border">
+        <h2 class="text-lg font-semibold mb-4">Group Information</h2>
+        <dl class="space-y-3">
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Name</dt>
+            <dd class="text-sm text-gray-900">{group.name}</dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Description</dt>
+            <dd class="text-sm text-gray-900">{group.description || 'No description'}</dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Members</dt>
+            <dd class="text-sm text-gray-900">{usersCount} users</dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Created</dt>
+            <dd class="text-sm text-gray-900">{new Date(group.created_at).toLocaleDateString()}</dd>
+          </div>
+          <div>
+            <dt class="text-sm font-medium text-gray-500">Last Updated</dt>
+            <dd class="text-sm text-gray-900">{new Date(group.updated_at).toLocaleDateString()}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="bg-white p-6 rounded-lg border">
+        <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+        <div class="space-y-3">
+          <a
+            href={`/admin/groups/${group.id}/users`}
+            class="block w-full px-4 py-2 text-sm font-medium text-left text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100"
+          >
+            Manage Group Members
+          </a>
+          <a
+            href={`/admin/groups/${group.id}/permissions`}
+            class="block w-full px-4 py-2 text-sm font-medium text-left text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100"
+          >
+            Configure Permissions
+          </a>
+          <a
+            href={`/admin/groups/${group.id}/edit`}
+            class="block w-full px-4 py-2 text-sm font-medium text-left text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100"
+          >
+            Edit Group Details
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+      <a
+        href="/admin/groups"
+        class="text-sm text-gray-600 hover:text-gray-900"
+      >
+        ← Back to Groups
+      </a>
+    </div>
+  </div>
+</Layout> 

@@ -1,0 +1,30 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Authentication">
+  <div class="flex flex-col items-center justify-center gap-4 py-20 px-8">
+    <h1 class="text-5xl font-bold">Authentication</h1>
+    <p class="text-xl text-muted-foreground">Sign in to access the admin dashboard</p>
+    
+    <div class="flex flex-col gap-4 mt-8 w-full max-w-md">
+      <a 
+        href="/login" 
+        class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-in" aria-hidden="true">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10,17 15,12 10,7"/>
+          <line x1="15" x2="3" y1="12" y2="12"/>
+        </svg>
+        Sign In
+      </a>
+      
+      <div class="text-center mt-4">
+        <a href="/" class="text-sm text-muted-foreground hover:text-foreground">
+          ← Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout> 

@@ -1,0 +1,43 @@
+---
+import { RunCustomerWorkflowButton } from '@/components/admin/run-customer-workflow';
+import Layout from '@/layouts/Layout.astro';
+import { CustomerService } from '@/lib/services/customer';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+const { API_TOKEN, DB } = Astro.locals.runtime.env as unknown as { API_TOKEN: string; DB: D1Database };
+const { id } = Astro.params;
+
+if (!id) {
+  return new Response('Customer ID is required', { status: 400 });
+}
+
+const customerService = new CustomerService(DB);
+const customer = await customerService.getById(parseInt(id));
+---
+<Layout title={customer.name}>
+  <h2 class="text-xl font-bold tracking-tight">Customer Details</h2>
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Name</TableHead>
+        <TableHead>Email</TableHead>
+        <TableHead>Notes</TableHead>
+        <TableHead>Created At</TableHead>
+        <TableHead>Updated At</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>{customer.name}</TableCell>
+        <TableCell>{customer.email}</TableCell>
+        <TableCell>{customer.notes}</TableCell>
+        <TableCell>{customer.created_at}</TableCell>
+        <TableCell>{customer.updated_at}</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+
+  <div slot="actions">
+    <RunCustomerWorkflowButton apiToken={API_TOKEN} client:only="react" customerId={id} />
+  </div>
+</Layout>

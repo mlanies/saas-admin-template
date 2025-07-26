@@ -1,0 +1,42 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { GroupService } from '@/lib/services/group';
+
+const { API_TOKEN, AUTH_DB } = Astro.locals.runtime.env as unknown as { API_TOKEN: string; AUTH_DB: D1Database };
+
+// Get groups
+const groupService = new GroupService(AUTH_DB);
+const groups = await groupService.getAll();
+
+// Get user count for each group
+const groupsWithUserCount = await Promise.all(
+  groups.map(async (group) => {
+    const userCount = await groupService.getUsersCount(group.id);
+    return {
+      ...group,
+      description: group.description ?? null, // Fix: Ensure description is string | null
+      users_count: userCount
+    };
+  })
+);
+
+import { GroupsTable } from '@/components/admin/groups/GroupsTable';
+import { CreateGroupButton } from '@/components/admin/groups/CreateGroupButton';
+---
+
+<Layout title="Groups">
+  {groupsWithUserCount.length ? (
+    <GroupsTable data={groupsWithUserCount} apiToken={API_TOKEN} />
+  ) : (
+    <div class="text-center py-12">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">No Groups Yet</h2>
+      <p class="text-gray-600 mb-6">
+        Create your first group to start managing users and permissions.
+      </p>
+    </div>
+  )}
+
+  <div slot="actions">
+    <CreateGroupButton apiToken={API_TOKEN} client:only="react" />
+  </div>
+</Layout> 

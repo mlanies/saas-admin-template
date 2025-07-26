@@ -1,0 +1,67 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { GroupService } from '@/lib/services/group';
+
+// Get group data
+const groupId = Astro.params.id;
+if (!groupId) {
+  return new Response('Group ID is required', { status: 400 });
+}
+
+const { AUTH_DB, API_TOKEN } = Astro.locals.runtime.env as unknown as { AUTH_DB: D1Database; API_TOKEN: string };
+const groupService = new GroupService(AUTH_DB);
+const group = await groupService.getById(groupId);
+
+if (!group) {
+  return new Response('Group not found', { status: 404 });
+}
+---
+
+<Layout title={`Group Users: ${group.name}`}>
+  <div class="space-y-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold tracking-tight">Group Users</h1>
+        <p class="text-muted-foreground">
+          Manage users in group: {group.name}
+        </p>
+      </div>
+      <a
+        href={`/admin/groups/${group.id}`}
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+      >
+        Back to Group
+      </a>
+    </div>
+
+    <div id="group-users-container">
+      <!-- React компонент будет вставлен здесь -->
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import React from 'react';
+  import { GroupUsers } from '@/components/admin/groups/GroupUsers';
+  import { createRoot } from 'react-dom/client';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('group-users-container');
+    if (container) {
+      const root = createRoot(container);
+      
+      // Get group ID from URL
+      const pathParts = window.location.pathname.split('/');
+      const groupId = pathParts[pathParts.length - 2]; // /admin/groups/[id]/users
+      const groupName = document.querySelector('h1')?.textContent?.replace('Group Users: ', '') || 'Group';
+      
+      root.render(
+        React.createElement(GroupUsers, {
+          groupId,
+          groupName,
+          apiToken: 'dev_token_12345',
+        })
+      );
+    }
+  });
+</script> 
